@@ -10,6 +10,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from redis.asyncio import Redis
 
+from app import telemetry as tel
 from app.cache import SemanticCache
 from app.compressor import compress_context
 from app.config import Settings, get_settings
@@ -18,7 +19,6 @@ from app.models import ChatCompletionRequest, HealthResponse
 from app.proxy import ProxyClient, UpstreamError
 from app.router import ModelRouter
 from app.vector_store import VectorStore
-from app import telemetry as tel
 
 logger = structlog.get_logger()
 

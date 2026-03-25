@@ -1,7 +1,9 @@
 # Phase 1 implementation
 import pytest
-from app.telemetry import init_db, write_record, get_records, get_summary
+
 from app.costs import estimate_cost
+from app.telemetry import get_records, get_summary, init_db, write_record
+
 
 @pytest.fixture(autouse=True)
 def fresh_db(tmp_path, monkeypatch):

@@ -2,10 +2,13 @@
 import time
 import uuid
 from datetime import datetime
+
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
+
 from app import telemetry
 from app.costs import estimate_cost  # see below
+
 
 class TelemetryMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
