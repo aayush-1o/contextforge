@@ -8,6 +8,7 @@ venv/
 data/
 *.db
 *.index
+*.idmap
 dist/
 build/
 *.egg-info/

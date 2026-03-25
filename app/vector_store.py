@@ -1,11 +1,13 @@
 """FAISS Flat index wrapper with thread-safe add/search and persistence.
 
 Uses a threading.Lock around write operations to prevent index corruption
-from concurrent requests.
+from concurrent requests. The id_map (FAISS index position → cache key)
+is persisted alongside the FAISS index for crash recovery.
 """
 
 from __future__ import annotations
 
+import json
 import os
 import threading
 from pathlib import Path
@@ -18,26 +20,41 @@ logger = structlog.get_logger()
 
 
 class VectorStore:
-    """Thread-safe FAISS Flat (L2) index for semantic similarity search.
+    """Thread-safe FAISS IndexFlatIP wrapper for semantic similarity search.
 
-    Stores normalized vectors so L2 distance maps directly to cosine distance:
-      cosine_similarity = 1 - (L2_distance^2 / 2)
+    Uses inner product (IP) on L2-normalized vectors, which is equivalent
+    to cosine similarity. Scores range from 0 to 1.
     """
 
     def __init__(self, dimension: int, index_path: str = "./data/faiss.index") -> None:
         self._dimension = dimension
         self._index_path = index_path
+        self._id_map_path = index_path + ".idmap"
         self._lock = threading.Lock()
-        self._id_map: list[str] = []  # maps internal FAISS index position → cache key
+        self._id_map: list[str] = []
 
-        # Load existing index or create a new one
+        # Load existing index and id_map, or create new
         if os.path.exists(index_path):
             logger.info("vector_store.loading", path=index_path)
             self._index = faiss.read_index(index_path)
-            logger.info("vector_store.loaded", num_vectors=self._index.ntotal)
+            self._id_map = self._load_id_map()
+            logger.info("vector_store.loaded", num_vectors=self._index.ntotal, id_map_size=len(self._id_map))
         else:
             logger.info("vector_store.creating", dimension=dimension)
-            self._index = faiss.IndexFlatIP(dimension)  # Inner product on normalized vectors = cosine sim
+            self._index = faiss.IndexFlatIP(dimension)
+
+    def _load_id_map(self) -> list[str]:
+        """Load the id_map from disk."""
+        if os.path.exists(self._id_map_path):
+            with open(self._id_map_path) as f:
+                return json.load(f)
+        return []
+
+    def _save_id_map(self) -> None:
+        """Save the id_map to disk."""
+        Path(self._id_map_path).parent.mkdir(parents=True, exist_ok=True)
+        with open(self._id_map_path, "w") as f:
+            json.dump(self._id_map, f)
 
     @property
     def size(self) -> int:
@@ -78,10 +95,11 @@ class VectorStore:
         return results
 
     def persist(self) -> None:
-        """Save the FAISS index to disk."""
+        """Save the FAISS index and id_map to disk."""
         Path(self._index_path).parent.mkdir(parents=True, exist_ok=True)
         with self._lock:
             faiss.write_index(self._index, self._index_path)
+            self._save_id_map()
             logger.info("vector_store.persisted", path=self._index_path, num_vectors=self._index.ntotal)
 
     def reset(self) -> None:

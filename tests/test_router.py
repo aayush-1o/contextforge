@@ -108,7 +108,6 @@ class TestModelRouter:
 
     def test_ambiguous_defaults_to_complex(self, router):
         """Mid-length prompts without clear signals should default to COMPLEX."""
-        # Create a prompt between simple_max_tokens and complex_min_tokens, no keywords
         mid_length = "The quick brown fox jumps over the lazy dog. " * 20
         result = router.route(
             "gpt-3.5-turbo",
@@ -122,7 +121,7 @@ class TestModelRouter:
 
 
 class TestLabeledPromptAccuracy:
-    """Validate routing accuracy against the 50-prompt labeled test set."""
+    """Validate routing accuracy against the 1000-prompt labeled test set."""
 
     @pytest.fixture
     def labeled_prompts(self) -> list[dict]:
@@ -140,7 +139,7 @@ class TestLabeledPromptAccuracy:
 
         for item in labeled_prompts:
             prompt = item["prompt"]
-            expected = item["expected_tier"]
+            expected = item["label"]  # "simple" or "complex"
             result = router.route("gpt-3.5-turbo", [{"role": "user", "content": prompt}])
 
             if result.tier.value == expected:
@@ -153,12 +152,12 @@ class TestLabeledPromptAccuracy:
         accuracy = correct / len(labeled_prompts)
         assert accuracy >= 0.85, (
             f"Accuracy {accuracy:.1%} is below 85% ({correct}/{len(labeled_prompts)}). "
-            f"Misclassified:\n" + "\n".join(errors)
+            f"Misclassified (first 20):\n" + "\n".join(errors[:20])
         )
 
-    def test_all_simple_prompts_classified(self, router, labeled_prompts):
-        """Verify at least 80% of simple-labeled prompts are classified correctly."""
-        simple_prompts = [p for p in labeled_prompts if p["expected_tier"] == "simple"]
+    def test_simple_accuracy_above_80_percent(self, router, labeled_prompts):
+        """At least 80% of simple-labeled prompts are classified correctly."""
+        simple_prompts = [p for p in labeled_prompts if p["label"] == "simple"]
         correct = sum(
             1
             for p in simple_prompts
@@ -167,9 +166,9 @@ class TestLabeledPromptAccuracy:
         accuracy = correct / len(simple_prompts)
         assert accuracy >= 0.80, f"Simple accuracy: {accuracy:.1%} ({correct}/{len(simple_prompts)})"
 
-    def test_all_complex_prompts_classified(self, router, labeled_prompts):
-        """Verify at least 90% of complex-labeled prompts are classified correctly."""
-        complex_prompts = [p for p in labeled_prompts if p["expected_tier"] == "complex"]
+    def test_complex_accuracy_above_90_percent(self, router, labeled_prompts):
+        """At least 90% of complex-labeled prompts are classified correctly."""
+        complex_prompts = [p for p in labeled_prompts if p["label"] == "complex"]
         correct = sum(
             1
             for p in complex_prompts
@@ -177,6 +176,23 @@ class TestLabeledPromptAccuracy:
         )
         accuracy = correct / len(complex_prompts)
         assert accuracy >= 0.90, f"Complex accuracy: {accuracy:.1%} ({correct}/{len(complex_prompts)})"
+
+    def test_dataset_has_1000_entries(self, labeled_prompts):
+        """Verify the dataset has at least 1000 entries."""
+        assert len(labeled_prompts) >= 1000, f"Expected ≥1000 prompts, got {len(labeled_prompts)}"
+
+    def test_dataset_category_distribution(self, labeled_prompts):
+        """Verify all 8 categories are represented with at least 100 entries each."""
+        from collections import Counter
+
+        cats = Counter(p["category"] for p in labeled_prompts)
+        expected_cats = {
+            "qa", "code", "creative", "analytical",
+            "conversational", "summarization", "debug", "comparison",
+        }
+        assert set(cats.keys()) == expected_cats, f"Missing categories: {expected_cats - set(cats.keys())}"
+        for cat, count in cats.items():
+            assert count >= 100, f"Category '{cat}' has only {count} entries (need ≥100)"
 
 
 # ────────────── Integration: Router in Chat Endpoint ─────────────────────
@@ -218,7 +234,6 @@ class TestChatCompletionsWithRouter:
 
         assert resp.status_code == 200
         assert resp.headers.get("x-model-selected") == "gpt-4o"
-        # Verify the override was passed to the router
         mock_router.route.assert_called_once()
         call_kwargs = mock_router.route.call_args
         assert call_kwargs[1].get("override_model") == "gpt-4o" or call_kwargs[0][-1] == "gpt-4o"
@@ -239,7 +254,6 @@ class TestChatCompletionsWithRouter:
         resp = test_client.post("/v1/chat/completions", json=sample_request_body)
         assert resp.status_code == 200
 
-        # Verify proxy was called with model_override
         mock_proxy_client.forward.assert_called_once()
         call_kwargs = mock_proxy_client.forward.call_args
         assert call_kwargs[1].get("model_override") == "gpt-4o" or (
