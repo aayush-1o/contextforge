@@ -1,0 +1,29 @@
+# ContextForge Routing Rules
+# Rule-based model complexity routing configuration
+
+rules:
+  # Simple queries — route to cheaper/faster models
+  simple:
+    max_tokens: 500
+    keywords: []
+    target_model: "gpt-3.5-turbo"
+
+  # Complex queries — route to more capable models
+  complex:
+    min_tokens: 500
+    keywords:
+      - "analyze"
+      - "explain in detail"
+      - "compare and contrast"
+      - "write a comprehensive"
+      - "debug this"
+      - "refactor"
+    target_model: "gpt-4"
+
+# Default model when no rule matches
+default_model: "gpt-3.5-turbo"
+
+# Provider preference order
+provider_preference:
+  - openai
+  - anthropic
