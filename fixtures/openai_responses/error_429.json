@@ -1,0 +1,8 @@
+{
+  "error": {
+    "message": "Rate limit reached for gpt-3.5-turbo in organization org-xxx on tokens per min (TPM): Limit 60000, Used 59500, Requested 1000.",
+    "type": "tokens",
+    "param": null,
+    "code": "rate_limit_exceeded"
+  }
+}
