@@ -88,3 +88,4 @@ async def compress_context(
     except Exception as e:
         logger.warning(f"Compression failed, proceeding uncompressed: {e}")
         return messages, 1.0
+
