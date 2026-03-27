@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import sqlite3
+import threading
 from contextlib import contextmanager
+from typing import Any
 
 from app.config import get_settings
 
 DB_PATH = get_settings().sqlite_db_path
+_lock = threading.Lock()
 
 
 def init_db() -> None:
@@ -45,19 +48,23 @@ def get_conn():
         conn.close()
 
 
-def write_record(record: dict) -> None:
+def write_record(record: dict[str, Any]) -> None:
     """Write a single telemetry record."""
-    with get_conn() as conn:
-        conn.execute("""
-            INSERT OR IGNORE INTO telemetry
-            (request_id, timestamp, model_requested, model_used, cache_hit,
-             similarity_score, prompt_tokens, completion_tokens,
-             estimated_cost_usd, latency_ms, compressed, compression_ratio)
-            VALUES
-            (:request_id, :timestamp, :model_requested, :model_used, :cache_hit,
-             :similarity_score, :prompt_tokens, :completion_tokens,
-             :estimated_cost_usd, :latency_ms, :compressed, :compression_ratio)
-        """, record)
+    with _lock:
+        try:
+            with get_conn() as conn:
+                conn.execute("""
+                    INSERT OR IGNORE INTO telemetry
+                    (request_id, timestamp, model_requested, model_used, cache_hit,
+                     similarity_score, prompt_tokens, completion_tokens,
+                     estimated_cost_usd, latency_ms, compressed, compression_ratio)
+                    VALUES
+                    (:request_id, :timestamp, :model_requested, :model_used, :cache_hit,
+                     :similarity_score, :prompt_tokens, :completion_tokens,
+                     :estimated_cost_usd, :latency_ms, :compressed, :compression_ratio)
+                """, record)
+        except Exception:
+            pass
 
 
 def get_records(limit: int = 50, offset: int = 0) -> list[dict]:
@@ -70,7 +77,7 @@ def get_records(limit: int = 50, offset: int = 0) -> list[dict]:
     return [dict(r) for r in rows]
 
 
-def get_summary() -> dict:
+def get_summary() -> dict[str, Any]:
     """Return aggregated telemetry stats."""
     with get_conn() as conn:
         row = conn.execute("""

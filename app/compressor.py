@@ -1,11 +1,7 @@
 """Context compressor — summarizes older turns to reduce token usage."""
-
 from __future__ import annotations
-
 import logging
-
 import tiktoken
-
 from app.config import Settings
 
 logger = logging.getLogger(__name__)
@@ -17,7 +13,6 @@ def count_tokens(messages: list[dict], model: str = "gpt-3.5-turbo") -> int:
         enc = tiktoken.encoding_for_model(model)
     except KeyError:
         enc = tiktoken.get_encoding("cl100k_base")  # fallback for unknown models
-
     total = 0
     for msg in messages:
         total += len(enc.encode(msg.get("content", ""))) + 4  # +4 for role overhead
@@ -40,7 +35,6 @@ async def compress_context(
     # Don't compress if under threshold or conversation too short
     if total_tokens <= settings.compress_threshold:
         return messages, 1.0
-
     if len(messages) <= settings.compress_min_turns:
         return messages, 1.0
 
@@ -63,29 +57,23 @@ async def compress_context(
                 f"{m['role'].upper()}: {m['content']}" for m in turns_to_summarize
             )
         )
-
         summary_text = await proxy_client.simple_completion(
             model=settings.compress_summary_model,
             prompt=summary_prompt,
         )
-
         summary_message = {
             "role": "user",
             "content": f"[SUMMARY OF EARLIER CONVERSATION]: {summary_text}",
         }
-
         compressed = system_msgs + [summary_message] + recent_turns
         ratio = count_tokens(compressed, model) / total_tokens
-
         compressed_tokens = count_tokens(compressed, model)
         logger.info(
             f"Context compressed: {total_tokens} → "
             f"{compressed_tokens} tokens "
             f"(ratio: {ratio:.2f})"
-)
-
+        )
         return compressed, ratio
-
     except Exception as e:
         logger.warning(f"Compression failed, proceeding uncompressed: {e}")
         return messages, 1.0
