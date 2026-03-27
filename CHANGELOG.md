@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [v0.7.0] — 2026-03-27
+
+### Added — Phase 7: Testing & Benchmarking Harness
+- E2E benchmark runner (`benchmarks/run_benchmark.py`) with three benchmarks:
+  - **Cache hit rate**: 50 prompts + paraphrased replays, measures hit rate and speedup factor
+  - **Routing accuracy**: All 1000 labeled prompts, measures accuracy ≥85% with confusion matrix
+  - **Latency**: 100 requests, measures p50/p95/p99/min/max
+- `--dry-run` mode for CI (synthetic fixture data, no live server required)
+- Benchmark utility module (`benchmarks/benchmark_utils.py`) with testable functions:
+  - `paraphrase()` — synonym-based text paraphrasing
+  - `compute_latency_stats()` — p50/p95/p99 percentile computation
+  - `compute_routing_accuracy()` — accuracy + confusion matrix calculation
+  - `BenchmarkResult` — JSON-serializable results dataclass
+- Benchmark results saved to `benchmarks/results/benchmark_YYYYMMDD_HHMMSS.json`
+- Output formatting with `rich` (if installed) or plain text fallback
+- Hard failure assertions: routing accuracy ≥85%, p95 ≤5000ms, cache hit rate ≥40%
+- 15 new benchmark tests (`tests/test_benchmarks.py`)
+- CI `benchmark-dry-run` job in GitHub Actions
+- Benchmark documentation (`benchmarks/README.md`)
+
+---
+
 ## [v0.6.0] — 2026-03-27
 
 ### Added — Phase 6: Adaptive Thresholds & Cache Invalidation
