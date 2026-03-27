@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./docs/Architecture.png" alt="ContextForge Architecture" width="100%"/>
+  <img src="./Architecture.png" alt="ContextForge Architecture" width="100%"/>
 </p>
 
 <h1 align="center">ContextForge</h1>
@@ -32,13 +32,13 @@ You point your app at `localhost:8000` instead of `api.openai.com`. Same SDK, sa
 | ⚡ **Latency on repeat queries** | 500ms–2s (full API round-trip) | **< 30ms** (served from local cache) |
 | 🔧 **Code changes needed** | — | **Zero** — just change the base URL |
 | 🤖 **Model flexibility** | Hardcoded in your app | Automatic — simple→GPT-3.5, complex→GPT-4o |
-| 🔒 **Vendor lock-in** | Tied to one provider | Switch between OpenAI & Anthropic via config |
+| 🔒 **Vendor lock-in** | Tied to one provider | Swap models or providers via config — no code changes |
 
 ---
 
 ## 🏗️ Architecture
 
-![ContextForge Architecture](./docs/Architecture.png)
+![ContextForge Architecture](./Architecture.png)
 
 ![UX Blueprint](./contextForge-ux%20Blueprint.png)
 
@@ -53,8 +53,8 @@ flowchart LR
     X --> C{"🔍 Semantic\nCache Lookup"}
     C -->|"✅ HIT (≥92% similar)"| T1["📊 Telemetry Write"]
     C -->|"❌ MISS"| D["🧠 Model Router"]
-    D -->|"SIMPLE"| E["gpt-3.5-turbo\nclaude-haiku"]
-    D -->|"COMPLEX"| F["gpt-4o\nclaude-opus"]
+    D -->|"SIMPLE"| E["gpt-3.5-turbo"]
+    D -->|"COMPLEX"| F["gpt-4o"]
     E --> G["☁️ Upstream API"]
     F --> G
     G --> I["💾 Cache Store\nFAISS + Redis"]
@@ -140,7 +140,7 @@ X-Model-Selected: gpt-4o    ← upgraded from gpt-3.5-turbo
 ### Prerequisites
 
 - Docker & Docker Compose
-- An OpenAI API key (and/or Anthropic)
+- An OpenAI API key
 
 ### 1. Clone & Configure
 
@@ -162,7 +162,7 @@ docker compose up --build -d
 
 ```bash
 curl http://localhost:8000/health
-# → {"status":"ok","version":"0.3.0"}
+# → {"status":"ok","version":"0.5.0"}
 ```
 
 ### 4. Use It
@@ -250,6 +250,8 @@ OpenAI-compatible chat completions endpoint. Supports both streaming and non-str
 | `X-Cache-Hit` | `true` if the response came from cache |
 | `X-Model-Tier` | Classification result: `simple` or `complex` |
 | `X-Model-Selected` | The model actually used for the upstream call |
+| `X-Compressed` | `true` if context compression was applied |
+| `X-Compression-Ratio` | Ratio of compressed to original tokens (e.g. `0.65`) |
 
 **Special request headers:**
 | Header | Description |
@@ -337,7 +339,7 @@ Returns aggregated telemetry statistics.
 | Cache store | **Redis 7** | TTL support, fast KV reads, production-proven |
 | Token counting | **tiktoken** | Model-specific token counts, fast |
 | Telemetry DB | **SQLite** (via SQLModel) | Zero infra, single-file, easy migration path |
-| LLM SDKs | **openai-python** + **anthropic-python** | Official SDKs, version-pinned |
+| LLM SDKs | **openai-python** (anthropic-python available but not active) | Official SDKs, version-pinned |
 | Config | **Pydantic Settings** + .env | Type-safe, validated at startup |
 | Logging | **structlog** | Structured JSON logs, easy to parse |
 | Testing | **pytest** + **httpx** | Fixture-based, no live API calls |
