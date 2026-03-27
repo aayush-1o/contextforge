@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from redis.asyncio import Redis
 
 from app.cache import SemanticCache
+from app.compressor import compress_context
 from app.config import Settings, get_settings
 from app.embedder import Embedder
 from app.models import ChatCompletionRequest, HealthResponse
@@ -74,7 +75,7 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(
     title="ContextForge",
     description="Proxy middleware for LLM-powered apps",
-    version="0.3.0",
+    version="0.4.0",
     lifespan=lifespan,
 )
 
@@ -97,10 +98,11 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
 
     Pipeline:
       1. Route model (classify complexity → select tier)
-      2. Check semantic cache for a similar prompt
-      3. On cache hit → return cached response immediately
-      4. On cache miss → forward to upstream with routed model, cache the result
-    Streaming requests bypass cache (cannot cache partial responses).
+      2. Compress context if conversation is long
+      3. Check semantic cache for a similar prompt
+      4. On cache hit → return cached response immediately
+      5. On cache miss → forward to upstream, cache the result
+    Streaming requests bypass cache and compression.
     """
     proxy_client: ProxyClient = request.app.state.proxy_client
     cache: SemanticCache = request.app.state.cache
@@ -113,7 +115,7 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
         override_model = request.headers.get("x-contextforge-model-override")
         routing = router.route(body.model, messages_dicts, override_model=override_model)
 
-        # Streaming bypasses cache but uses routed model
+        # Streaming bypasses cache and compression
         if body.stream:
             return StreamingResponse(
                 proxy_client.forward_stream(body, model_override=routing.model_selected),
@@ -127,8 +129,25 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
                 },
             )
 
+        # --- Context compression ---
+        no_compress = request.headers.get("x-contextforge-no-compress") == "true"
+        compression_ratio = 1.0
+        compressed_messages = messages_dicts
+
+        if not no_compress:
+            compressed_messages, compression_ratio = await compress_context(
+                messages_dicts,
+                body.model,
+                proxy_client,
+                request.app.state.settings,
+            )
+            # Update body.messages so forward() sends compressed messages upstream
+            body.messages = [
+                body.messages[0].__class__(**m) for m in compressed_messages
+            ]
+
         # --- Semantic cache lookup ---
-        cache_result = await cache.lookup(body.model, messages_dicts)
+        cache_result = await cache.lookup(body.model, compressed_messages)
 
         if cache_result.hit:
             return JSONResponse(
@@ -138,6 +157,8 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
                     "X-Similarity": str(cache_result.similarity_score),
                     "X-Model-Tier": routing.tier.value,
                     "X-Model-Selected": routing.model_selected,
+                    "X-Compressed": str(not no_compress),
+                    "X-Compression-Ratio": str(compression_ratio),
                 },
             )
 
@@ -145,7 +166,7 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
         response_data = await proxy_client.forward(body, model_override=routing.model_selected)
 
         # Store in cache
-        await cache.store(body.model, messages_dicts, response_data)
+        await cache.store(body.model, compressed_messages, response_data)
 
         return JSONResponse(
             content=response_data,
@@ -153,6 +174,8 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
                 "X-Cache": "MISS",
                 "X-Model-Tier": routing.tier.value,
                 "X-Model-Selected": routing.model_selected,
+                "X-Compressed": str(not no_compress),
+                "X-Compression-Ratio": str(compression_ratio),
             },
         )
 
