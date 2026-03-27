@@ -1,21 +1,52 @@
-# ContextForge
-.env
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
+*.pyd
+.Python
+*.so
+
+# Virtual environments
 .venv/
 venv/
+env/
+ENV/
+
+# Environment variables — NEVER commit
+.env
+.env.local
+.env.*.local
+
+# Runtime data — generated at runtime, not source code
 data/
 *.db
 *.index
 *.idmap
-dist/
-build/
-*.egg-info/
+
+# Test and lint caches
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
-htmlcov/
 .coverage
-*.log
+htmlcov/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+*.egg
+
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
