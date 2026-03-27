@@ -1,12 +1,12 @@
 # Phase 1 implementation
 import pytest
-
 from app.costs import estimate_cost
 from app.telemetry import get_records, get_summary, init_db, write_record
 
 
 @pytest.fixture(autouse=True)
 def fresh_db(tmp_path, monkeypatch):
+    monkeypatch.setenv("TELEMETRY_DB_PATH", str(tmp_path / "test.db"))
     import app.telemetry as t
     t.DB_PATH = str(tmp_path / "test.db")
     init_db()
@@ -47,12 +47,13 @@ def test_summary_cache_hit_rate():
 
 def test_cost_estimation_accuracy():
     cost = estimate_cost("gpt-4o", prompt_tokens=1000, completion_tokens=500)
+    # 1000 * 5/1M + 500 * 15/1M = 0.005 + 0.0075 = 0.0125
     assert cost == pytest.approx(0.0125, rel=0.01)
 
 
 def test_duplicate_request_id_ignored():
     write_record(make_record("dup"))
-    write_record(make_record("dup"))
+    write_record(make_record("dup"))  # should be silently ignored (INSERT OR IGNORE)
     assert len(get_records()) == 1
 
 

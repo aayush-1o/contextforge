@@ -10,6 +10,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from redis.asyncio import Redis
 
+from app import telemetry as tel
 from app.cache import SemanticCache
 from app.compressor import compress_context
 from app.config import Settings, get_settings
@@ -62,6 +63,9 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
         preferred_provider=settings.preferred_provider,
     )
     application.state.router = router
+
+    # --- Telemetry DB ---
+    tel.init_db()
 
     logger.info("contextforge.started", log_level=settings.log_level)
     yield
@@ -150,6 +154,16 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
         cache_result = await cache.lookup(body.model, compressed_messages)
 
         if cache_result.hit:
+            # --- Telemetry: cache hit ---
+            request.state.model_requested = body.model
+            request.state.model_used = routing.model_selected
+            request.state.cache_hit = True
+            request.state.similarity_score = cache_result.similarity_score
+            request.state.prompt_tokens = 0
+            request.state.completion_tokens = 0
+            request.state.compressed = not no_compress
+            request.state.compression_ratio = compression_ratio
+
             return JSONResponse(
                 content=cache_result.response,
                 headers={
@@ -167,6 +181,17 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
 
         # Store in cache
         await cache.store(body.model, compressed_messages, response_data)
+
+        # --- Telemetry: cache miss ---
+        usage = response_data.get("usage") or {}
+        request.state.model_requested = body.model
+        request.state.model_used = routing.model_selected
+        request.state.cache_hit = False
+        request.state.similarity_score = None
+        request.state.prompt_tokens = usage.get("prompt_tokens", 0)
+        request.state.completion_tokens = usage.get("completion_tokens", 0)
+        request.state.compressed = not no_compress
+        request.state.compression_ratio = compression_ratio
 
         return JSONResponse(
             content=response_data,
@@ -191,3 +216,16 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
                 }
             },
         )
+
+
+# ─────────────────── Telemetry Endpoints ─────────────────────────────────
+
+
+@app.get("/v1/telemetry")
+async def get_telemetry(limit: int = 50, offset: int = 0):
+    return {"records": tel.get_records(limit, offset), "limit": limit, "offset": offset}
+
+
+@app.get("/v1/telemetry/summary")
+async def get_telemetry_summary():
+    return tel.get_summary()
