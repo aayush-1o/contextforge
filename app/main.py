@@ -84,7 +84,7 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(
     title="ContextForge",
     description="Proxy middleware for LLM-powered apps",
-    version="0.6.0",
+    version="0.7.0",
     lifespan=lifespan,
 )
 

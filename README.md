@@ -12,10 +12,10 @@
 
 <p align="center">
   <a href="https://github.com/aayush-1o/contextforge/actions/workflows/ci.yml"><img src="https://github.com/aayush-1o/contextforge/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/tests-69%20passed-brightgreen" alt="Tests">
+  <img src="https://img.shields.io/badge/tests-84%20passed-brightgreen" alt="Tests">
   <img src="https://img.shields.io/badge/python-3.11-blue" alt="Python 3.11">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License: MIT">
-  <img src="https://img.shields.io/badge/version-0.6.0-orange" alt="Version">
+  <img src="https://img.shields.io/badge/version-0.7.0-orange" alt="Version">
 </p>
 
 ---
@@ -141,11 +141,11 @@ X-Model-Selected: gpt-4o    ← upgraded from gpt-3.5-turbo
 | 4 | Context Compressor | ✅ Complete |
 | 5 | Telemetry Layer | ✅ Complete |
 | 6 | Adaptive Thresholds & Cache Invalidation | ✅ Complete |
-| 7 | Testing & Benchmarking Harness | ⏳ Pending |
+| 7 | Testing & Benchmarking Harness | ✅ Complete |
 | 8 | Dockerization & Deployment | ⏳ Pending |
 | 9 | Final Documentation & Handoff | ⏳ Pending |
 
-> **`v0.6.0`** · 69/69 tests passing · ruff clean · 1000-prompt benchmark dataset
+> **`v0.7.0`** · 84/84 tests passing · ruff clean · 1000-prompt benchmark dataset
 
 ---
 
@@ -503,8 +503,21 @@ pytest tests/ -v
 | `test_telemetry.py` | 5 | Write/read roundtrip, cache hit rate summary, cost estimation, duplicate request ID handling, total requests |
 | `test_adaptive.py` | 8 | Threshold raise/lower/unchanged, min/max caps, DB write, GET/POST endpoint schemas |
 | `test_cache_invalidation.py` | 7 | VectorStore flush, cache invalidate/flush/stats, idempotent flush, endpoint schemas |
+| `test_benchmarks.py` | 15 | Paraphrase, latency stats (p50/p95/p99), routing accuracy, confusion matrix, JSON serialization |
 
-> **All 69 tests pass without any live API calls or running services.**
+> **All 84 tests pass without any live API calls or running services.**
+
+### 📊 Running Benchmarks
+
+```bash
+# Full E2E benchmark (requires live ContextForge + Redis)
+python benchmarks/run_benchmark.py
+
+# Dry-run mode (no server required, for CI)
+python benchmarks/run_benchmark.py --dry-run
+```
+
+See [`benchmarks/README.md`](benchmarks/README.md) for full details on what each benchmark measures and how to interpret results.
 
 ---
 
@@ -552,7 +565,7 @@ A feature is "done" when:
 | ✅ 4 | **Context Compressor** | Summarize long conversation histories to reduce token usage |
 | ✅ 5 | **Telemetry Layer** | Per-request metrics in SQLite — model, latency, cost, cache hit |
 | ✅ 6 | **Adaptive Thresholds** | Auto-tune similarity threshold + cache invalidation API |
-| ⏳ 7 | **Benchmarking Harness** | E2E benchmarks for cache hit rates, routing accuracy, latency p50/p95/p99 |
+| ✅ 7 | **Benchmarking Harness** | E2E benchmarks for cache hit rates, routing accuracy, latency p50/p95/p99 |
 | ⏳ 8 | **Production Docker** | Production images, health checks, volume management, optional GPU |
 | ⏳ 9 | **Final Handoff** | Complete API docs, deployment guide, contributor onboarding |
 
