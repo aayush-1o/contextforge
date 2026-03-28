@@ -167,6 +167,144 @@
     </table>
   </div>
 </div>
+
+<div id="page-requests" class="page" style="display:none;padding:24px;">
+  <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+    <input id="req-search" placeholder="Search request ID..." style="flex:1;min-width:200px;padding:8px 12px;background:#161A22;border:1px solid rgba(255,255,255,0.07);border-radius:8px;color:#EAEEF4;font-size:13px;outline:none;">
+    <select id="cache-filter" style="padding:8px 12px;background:#161A22;border:1px solid rgba(255,255,255,0.07);border-radius:8px;color:#EAEEF4;font-size:13px;">
+      <option value="all">All Cache</option><option value="hit">HIT only</option><option value="miss">MISS only</option>
+    </select>
+    <select id="tier-filter" style="padding:8px 12px;background:#161A22;border:1px solid rgba(255,255,255,0.07);border-radius:8px;color:#EAEEF4;font-size:13px;">
+      <option value="all">All Tiers</option><option value="simple">Simple</option><option value="complex">Complex</option>
+    </select>
+    <button onclick="exportCSV()" style="padding:8px 16px;background:#5B8EF0;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:500;cursor:pointer;">Export CSV</button>
+  </div>
+  <div class="card" style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead><tr style="border-bottom:1px solid rgba(255,255,255,0.07);">
+        <th style="padding:10px 12px;text-align:left;color:#8091A8;font-weight:500;">Request ID</th>
+        <th style="padding:10px 12px;text-align:left;color:#8091A8;font-weight:500;">Time</th>
+        <th style="padding:10px 12px;text-align:left;color:#8091A8;font-weight:500;">Model Used</th>
+        <th style="padding:10px 12px;text-align:left;color:#8091A8;font-weight:500;">Cache</th>
+        <th style="padding:10px 12px;text-align:left;color:#8091A8;font-weight:500;">Tier</th>
+        <th style="padding:10px 12px;text-align:left;color:#8091A8;font-weight:500;">Latency</th>
+        <th style="padding:10px 12px;text-align:left;color:#8091A8;font-weight:500;">Tokens</th>
+        <th style="padding:10px 12px;text-align:left;color:#8091A8;font-weight:500;">Cost</th>
+        <th style="padding:10px 12px;text-align:left;color:#8091A8;font-weight:500;">Compressed</th>
+      </tr></thead>
+      <tbody id="req-tbody"></tbody>
+    </table>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid rgba(255,255,255,0.05);">
+      <button onclick="prevPage()" style="padding:6px 14px;background:#161A22;border:1px solid rgba(255,255,255,0.07);border-radius:6px;color:#EAEEF4;cursor:pointer;font-size:12px;">← Prev</button>
+      <span id="page-info" style="font-size:12px;color:#8091A8;">Page 1 of 3</span>
+      <button onclick="nextPage()" style="padding:6px 14px;background:#161A22;border:1px solid rgba(255,255,255,0.07);border-radius:6px;color:#EAEEF4;cursor:pointer;font-size:12px;">Next →</button>
+    </div>
+  </div>
+</div>
+
+<div id="page-cache" class="page" style="display:none;padding:24px;">
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
+    <div class="card"><div style="font-size:12px;color:#8091A8;margin-bottom:6px;">Total Entries</div><div style="font-size:24px;font-weight:600;">488</div></div>
+    <div class="card"><div style="font-size:12px;color:#8091A8;margin-bottom:6px;">Hit Rate</div><div style="font-size:24px;font-weight:600;color:#3ECF8E;">38.2%</div></div>
+    <div class="card"><div style="font-size:12px;color:#8091A8;margin-bottom:6px;">Avg Similarity</div><div style="font-size:24px;font-weight:600;">0.94</div></div>
+    <div class="card"><div style="font-size:12px;color:#8091A8;margin-bottom:6px;">Memory Used</div><div style="font-size:24px;font-weight:600;">12.4 MB</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+    <div class="card"><div style="font-size:13px;font-weight:500;color:#8091A8;margin-bottom:14px;">Similarity Distribution</div><canvas id="chart-similarity" height="160"></canvas></div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <span style="font-size:13px;font-weight:500;color:#8091A8;">Cache Entries</span>
+        <button onclick="showClearModal()" style="padding:6px 14px;background:rgba(240,101,101,0.1);border:1px solid rgba(240,101,101,0.3);border-radius:6px;color:#F06565;font-size:12px;cursor:pointer;">Clear Cache</button>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead><tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+          <th style="padding:8px 0;text-align:left;color:#8091A8;font-weight:500;">Key</th>
+          <th style="padding:8px 0;text-align:left;color:#8091A8;font-weight:500;">Similarity</th>
+          <th style="padding:8px 0;text-align:left;color:#8091A8;font-weight:500;">TTL</th>
+          <th style="padding:8px 0;text-align:left;color:#8091A8;font-weight:500;">Hits</th>
+        </tr></thead>
+        <tbody id="cache-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="page-router" class="page" style="display:none;padding:24px;">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+    <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;">
+      <div style="font-size:13px;color:#8091A8;margin-bottom:16px;">Routing Accuracy</div>
+      <svg width="120" height="120" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="8"/>
+        <circle cx="60" cy="60" r="52" fill="none" stroke="#3ECF8E" stroke-width="8" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="0" transform="rotate(-90 60 60)" style="transition:stroke-dashoffset 1.5s ease;"/>
+      </svg>
+      <div style="font-size:36px;font-weight:700;color:#3ECF8E;margin-top:8px;">100%</div>
+      <div style="font-size:12px;color:#8091A8;margin-top:4px;">on 1000-prompt dataset</div>
+    </div>
+    <div class="card"><div style="font-size:13px;font-weight:500;color:#8091A8;margin-bottom:14px;">Model Distribution</div><canvas id="chart-models-router" height="200"></canvas></div>
+  </div>
+  <div class="card">
+    <div style="font-size:13px;font-weight:500;color:#8091A8;margin-bottom:14px;">Category Breakdown</div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead><tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+        <th style="padding:10px 0;text-align:left;color:#8091A8;font-weight:500;">Category</th>
+        <th style="padding:10px 0;text-align:left;color:#8091A8;font-weight:500;">Count</th>
+        <th style="padding:10px 0;text-align:left;color:#8091A8;font-weight:500;">Avg Tokens</th>
+        <th style="padding:10px 0;text-align:left;color:#8091A8;font-weight:500;">Tier</th>
+        <th style="padding:10px 0;text-align:left;color:#8091A8;font-weight:500;">Accuracy</th>
+      </tr></thead>
+      <tbody id="router-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="page-telemetry" class="page" style="display:none;padding:24px;">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+    <div class="card"><div style="font-size:13px;font-weight:500;color:#8091A8;margin-bottom:14px;">Cost Over Time (14 days)</div><canvas id="chart-cost" height="160"></canvas></div>
+    <div class="card"><div style="font-size:13px;font-weight:500;color:#8091A8;margin-bottom:14px;">Latency Percentiles</div><canvas id="chart-latency" height="160"></canvas></div>
+  </div>
+  <div class="card"><div style="font-size:13px;font-weight:500;color:#8091A8;margin-bottom:14px;">Cache Hit Rate Trend</div><canvas id="chart-hitrate" height="120"></canvas></div>
+</div>
+
+<div id="page-settings" class="page" style="display:none;padding:24px;">
+  <div class="card" style="max-width:600px;">
+    <div style="font-size:15px;font-weight:600;margin-bottom:20px;">Configuration</div>
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div>
+        <label style="font-size:12px;color:#8091A8;display:block;margin-bottom:8px;">Similarity Threshold</label>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <input id="sim-threshold" type="range" min="0" max="1" step="0.01" value="0.92" style="flex:1;">
+          <span id="sim-val" style="font-family:'JetBrains Mono',monospace;font-size:13px;min-width:36px;">0.92</span>
+        </div>
+      </div>
+      <div><label style="font-size:12px;color:#8091A8;display:block;margin-bottom:8px;">Cache TTL (seconds)</label>
+        <input type="number" value="86400" style="width:100%;padding:8px 12px;background:#161A22;border:1px solid rgba(255,255,255,0.07);border-radius:8px;color:#EAEEF4;font-size:13px;outline:none;"></div>
+      <div><label style="font-size:12px;color:#8091A8;display:block;margin-bottom:8px;">Compression Token Threshold</label>
+        <input type="number" value="2000" style="width:100%;padding:8px 12px;background:#161A22;border:1px solid rgba(255,255,255,0.07);border-radius:8px;color:#EAEEF4;font-size:13px;outline:none;"></div>
+      <div><label style="font-size:12px;color:#8091A8;display:block;margin-bottom:8px;">Compression Min Turns</label>
+        <input type="number" value="6" style="width:100%;padding:8px 12px;background:#161A22;border:1px solid rgba(255,255,255,0.07);border-radius:8px;color:#EAEEF4;font-size:13px;outline:none;"></div>
+      <div><label style="font-size:12px;color:#8091A8;display:block;margin-bottom:8px;">Preferred Provider</label>
+        <select style="width:100%;padding:8px 12px;background:#161A22;border:1px solid rgba(255,255,255,0.07);border-radius:8px;color:#EAEEF4;font-size:13px;"><option>openai</option><option>anthropic</option></select></div>
+      <div><label style="font-size:12px;color:#8091A8;display:block;margin-bottom:8px;">Log Level</label>
+        <select style="width:100%;padding:8px 12px;background:#161A22;border:1px solid rgba(255,255,255,0.07);border-radius:8px;color:#EAEEF4;font-size:13px;"><option>INFO</option><option>DEBUG</option><option>WARNING</option><option>ERROR</option></select></div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="saveSettings()" style="flex:1;padding:10px;background:#5B8EF0;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:500;cursor:pointer;">Save Settings</button>
+        <button onclick="resetSettings()" style="padding:10px 18px;background:transparent;border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#8091A8;font-size:13px;cursor:pointer;">Reset</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="clear-modal" style="display:none;opacity:0;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;transition:opacity 0.2s;">
+  <div style="background:#111318;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:28px;width:360px;">
+    <div style="font-size:16px;font-weight:600;margin-bottom:8px;">Clear Cache?</div>
+    <div style="font-size:13px;color:#8091A8;margin-bottom:24px;">This will delete all 488 cached entries from Redis and FAISS. This cannot be undone.</div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="hideClearModal()" style="flex:1;padding:10px;background:transparent;border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#8091A8;cursor:pointer;font-size:13px;">Cancel</button>
+      <button id="confirm-clear-btn" onclick="confirmClearCache()" style="flex:1;padding:10px;background:#F06565;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:13px;font-weight:500;">Confirm Clear</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── MOCK DATA ──────────────────────────────────────────────────────────────
 const models = ['gpt-3.5-turbo','gpt-3.5-turbo','gpt-3.5-turbo','gpt-4o'];
