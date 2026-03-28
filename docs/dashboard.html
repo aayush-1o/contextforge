@@ -167,3 +167,286 @@
     </table>
   </div>
 </div>
+<script>
+// ── MOCK DATA ──────────────────────────────────────────────────────────────
+const models = ['gpt-3.5-turbo','gpt-3.5-turbo','gpt-3.5-turbo','gpt-4o'];
+const tiers = ['simple','simple','simple','complex'];
+function randBetween(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function randId(){return 'req_'+Math.random().toString(36).substr(2,8);}
+function pastTime(minsAgo){const d=new Date();d.setMinutes(d.getMinutes()-minsAgo);return d.toISOString().replace('T',' ').substr(0,19);}
+
+const REQUESTS = Array.from({length:50},(_,i)=>{
+  const hit = i<19;
+  const mdl = hit?'gpt-3.5-turbo':(i%4===3?'gpt-4o':'gpt-3.5-turbo');
+  const tier = mdl==='gpt-4o'?'complex':'simple';
+  const lat = hit?randBetween(15,28):(mdl==='gpt-4o'?randBetween(800,1800):randBetween(200,500));
+  const cost = hit?0:(mdl==='gpt-4o'?+(Math.random()*0.013+0.012).toFixed(4):+(Math.random()*0.002+0.001).toFixed(4));
+  const pt = randBetween(10,80), ct = randBetween(5,40);
+  return {id:randId(),time:pastTime(i*20),modelRequested:'gpt-3.5-turbo',modelUsed:mdl,cacheHit:hit,tier,latencyMs:lat,promptTokens:pt,completionTokens:ct,cost,compressed:i%7===0};
+});
+
+const SUMMARY = {
+  totalRequests:1284, cacheHits:488, cacheHitRate:38.2,
+  avgLatencyMs:320, totalCostUsd:4.20, p95LatencyMs:890,
+  costSaved:4.20
+};
+
+const CACHE_STATS = {totalEntries:488,hitRate:38.2,avgSimilarity:0.94,memoryUsedMb:12.4};
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let currentPage='overview', reqPage=1, reqFilters={search:'',cache:'all',tier:'all'};
+let charts={}, apiConnected=false, sidebarCollapsed=false;
+
+// ── BOOT ───────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded',async()=>{
+  await tryAPI();
+  initAllCharts();
+  renderRequestsTable();
+  renderCacheTable();
+  renderRouterTable();
+  runCountUps();
+  setTimeout(()=>{
+    const boot=document.getElementById('boot');
+    if(boot){boot.style.opacity='0';setTimeout(()=>boot.remove(),500);}
+  },1200);
+  document.querySelectorAll('.card').forEach((c,i)=>{
+    c.style.opacity='0';c.style.transform='translateY(12px)';
+    setTimeout(()=>{c.style.transition='all 0.4s ease';c.style.opacity='1';c.style.transform='translateY(0)';},100+i*80);
+  });
+});
+
+// ── API ────────────────────────────────────────────────────────────────────
+async function tryAPI(){
+  try{
+    const r=await fetch('http://localhost:8000/health',{signal:AbortSignal.timeout(2000)});
+    if(r.ok){apiConnected=true;updateConnectionBadge(true);}
+  }catch{apiConnected=false;updateConnectionBadge(false);}
+}
+function updateConnectionBadge(connected){
+  const b=document.getElementById('conn-badge');
+  if(!b)return;
+  b.textContent=connected?'● Connected':'● Demo Mode';
+  b.style.color=connected?'var(--green)':'var(--amber)';
+}
+
+// ── NAVIGATION ─────────────────────────────────────────────────────────────
+function navigateTo(page){
+  document.querySelectorAll('.page').forEach(p=>{p.style.display='none';});
+  document.querySelectorAll('.nav-item').forEach(n=>{n.classList.remove('on');});
+  const pg=document.getElementById('page-'+page);
+  const ni=document.querySelector('[data-page="'+page+'"]');
+  if(pg){pg.style.display='block';pg.style.opacity='0';setTimeout(()=>{pg.style.transition='opacity 0.2s';pg.style.opacity='1';},10);}
+  if(ni)ni.classList.add('on');
+  currentPage=page;
+  document.getElementById('page-title').textContent=page.charAt(0).toUpperCase()+page.slice(1);
+}
+document.querySelectorAll('.nav-item[data-page]').forEach(n=>{
+  n.addEventListener('click',()=>navigateTo(n.dataset.page));
+});
+
+// ── COUNT UP ───────────────────────────────────────────────────────────────
+function countUp(el,target,suffix,duration){
+  let start=0,step=target/60;
+  const timer=setInterval(()=>{
+    start+=step;
+    if(start>=target){start=target;clearInterval(timer);}
+    el.textContent=(Number.isInteger(target)?Math.floor(start):start.toFixed(1))+suffix;
+  },duration/60);
+}
+function runCountUps(){
+  const els=document.querySelectorAll('[data-count]');
+  els.forEach(el=>{
+    const t=parseFloat(el.dataset.count);
+    const s=el.dataset.suffix||'';
+    countUp(el,t,s,1200);
+  });
+}
+
+// ── CHARTS ─────────────────────────────────────────────────────────────────
+function initAllCharts(){
+  // Bar chart - requests per day
+  const bc=document.getElementById('chart-requests');
+  if(bc&&!charts.requests){
+    charts.requests=new Chart(bc,{
+      type:'bar',
+      data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+        datasets:[{data:[145,189,134,210,178,98,180],backgroundColor:'rgba(91,142,240,0.7)',borderRadius:4}]},
+      options:{plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8091A8'}},x:{grid:{display:false},ticks:{color:'#8091A8'}}},animation:{duration:1000}}
+    });
+  }
+  // Doughnut chart
+  const dc=document.getElementById('chart-models');
+  if(dc&&!charts.models){
+    charts.models=new Chart(dc,{
+      type:'doughnut',
+      data:{labels:['gpt-3.5-turbo','gpt-4o','Cache Hit'],
+        datasets:[{data:[38,14,19],backgroundColor:['#5B8EF0','#F06565','#3ECF8E'],borderWidth:0,hoverOffset:4}]},
+      options:{plugins:{legend:{position:'bottom',labels:{color:'#8091A8',padding:16}}},cutout:'68%',animation:{duration:1000}}
+    });
+  }
+  // Cache similarity histogram
+  const sc=document.getElementById('chart-similarity');
+  if(sc&&!charts.sim){
+    charts.sim=new Chart(sc,{
+      type:'bar',
+      data:{labels:['0.90','0.91','0.92','0.93','0.94','0.95','0.96','0.97','0.98','0.99'],
+        datasets:[{data:[4,7,12,18,24,31,28,19,11,6],backgroundColor:'rgba(62,207,142,0.7)',borderRadius:3}]},
+      options:{plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8091A8'}},x:{grid:{display:false},ticks:{color:'#8091A8'}}}}
+    });
+  }
+  // Latency percentiles
+  const lc=document.getElementById('chart-latency');
+  if(lc&&!charts.latency){
+    charts.latency=new Chart(lc,{
+      type:'bar',
+      data:{labels:['p50','p75','p95','p99'],
+        datasets:[{data:[180,320,890,1400],backgroundColor:['#3ECF8E','#5B8EF0','#F5A623','#F06565'],borderRadius:4}]},
+      options:{plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8091A8'}},x:{grid:{display:false},ticks:{color:'#8091A8'}}}}
+    });
+  }
+  // Cost trend line
+  const cc=document.getElementById('chart-cost');
+  if(cc&&!charts.cost){
+    const labels=Array.from({length:14},(_,i)=>{const d=new Date();d.setDate(d.getDate()-13+i);return d.toLocaleDateString('en',{month:'short',day:'numeric'});});
+    charts.cost=new Chart(cc,{
+      type:'line',
+      data:{labels,datasets:[{data:[1.2,1.8,1.4,2.1,1.9,2.4,2.0,2.8,3.1,2.7,3.4,3.8,4.0,4.2],borderColor:'#5B8EF0',backgroundColor:'rgba(91,142,240,0.08)',fill:true,tension:0.4,pointRadius:3}]},
+      options:{plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8091A8',callback:v=>'$'+v}},x:{grid:{display:false},ticks:{color:'#8091A8',maxTicksLimit:7}}}}
+    });
+  }
+}
+
+// ── TABLES ─────────────────────────────────────────────────────────────────
+function getFilteredRequests(){
+  return REQUESTS.filter(r=>{
+    if(reqFilters.cache==='hit'&&!r.cacheHit)return false;
+    if(reqFilters.cache==='miss'&&r.cacheHit)return false;
+    if(reqFilters.tier!=='all'&&r.tier!==reqFilters.tier)return false;
+    if(reqFilters.search&&!r.id.includes(reqFilters.search))return false;
+    return true;
+  });
+}
+function renderRequestsTable(){
+  const data=getFilteredRequests();
+  const total=Math.ceil(data.length/20);
+  if(reqPage>total)reqPage=1;
+  const slice=data.slice((reqPage-1)*20,reqPage*20);
+  const tbody=document.getElementById('req-tbody');
+  if(!tbody)return;
+  tbody.innerHTML=slice.map(r=>`
+    <tr>
+      <td><span style="font-family:JetBrains Mono,monospace;font-size:11px;">${r.id}</span>
+        <button onclick="copyText('${r.id}')" style="background:none;border:none;cursor:pointer;color:var(--text2);margin-left:4px;">⎘</button></td>
+      <td>${r.time.substr(5,11)}</td>
+      <td>${r.modelUsed}</td>
+      <td><span class="pill ${r.cacheHit?'hit':'miss'}">${r.cacheHit?'HIT':'MISS'}</span></td>
+      <td><span class="pill ${r.tier}">${r.tier}</span></td>
+      <td>${r.latencyMs}ms</td>
+      <td>${r.promptTokens+r.completionTokens}</td>
+      <td>$${r.cost.toFixed(4)}</td>
+      <td>${r.compressed?'Yes':'No'}</td>
+    </tr>`).join('');
+  const pi=document.getElementById('page-info');
+  if(pi)pi.textContent=`Page ${reqPage} of ${Math.max(1,total)}`;
+}
+function renderCacheTable(){
+  const tbody=document.getElementById('cache-tbody');
+  if(!tbody)return;
+  const entries=Array.from({length:10},(_,i)=>({
+    key:'emb_'+Math.random().toString(36).substr(2,6),
+    sim:(0.92+Math.random()*0.07).toFixed(3),
+    ttl:randBetween(1,24),hits:randBetween(1,15)
+  }));
+  tbody.innerHTML=entries.map(e=>`
+    <tr><td style="font-family:JetBrains Mono,monospace;font-size:11px;">${e.key}</td>
+    <td>${e.sim}</td>
+    <td><div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;"><div style="width:${e.ttl/24*100}%;height:100%;background:var(--green);border-radius:2px;"></div></div>${e.ttl}h</div></td>
+    <td>${e.hits}</td></tr>`).join('');
+}
+function renderRouterTable(){
+  const tbody=document.getElementById('router-tbody');
+  if(!tbody)return;
+  const cats=[['QA','125','12','SIMPLE','100%'],['Code','125','48','COMPLEX','98%'],['Creative','125','18','SIMPLE','100%'],['Analytical','125','62','COMPLEX','97%'],['Debug','125','45','COMPLEX','99%'],['Comparison','125','38','COMPLEX','98%'],['Conversational','125','8','SIMPLE','100%'],['Summarization','125','22','SIMPLE','99%']];
+  tbody.innerHTML=cats.map(c=>`<tr><td>${c[0]}</td><td>${c[1]}</td><td>${c[2]}</td><td><span class="pill ${c[3].toLowerCase()}">${c[3]}</span></td><td style="color:var(--green)">${c[4]}</td></tr>`).join('');
+}
+
+// ── INTERACTIONS ───────────────────────────────────────────────────────────
+function copyText(text){
+  navigator.clipboard.writeText(text).then(()=>showToast('Copied to clipboard','success'));
+}
+function showToast(msg,type){
+  const t=document.createElement('div');
+  t.style.cssText=`position:fixed;top:20px;right:20px;z-index:9999;padding:12px 18px;background:${type==='success'?'var(--green)':type==='error'?'var(--red)':'var(--accent)'};color:#fff;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,0.4);transform:translateX(120%);transition:transform 0.3s ease;`;
+  t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.style.transform='translateX(0)',10);
+  setTimeout(()=>{t.style.transform='translateX(120%)';setTimeout(()=>t.remove(),300);},3000);
+}
+function showClearModal(){
+  const m=document.getElementById('clear-modal');
+  if(m){m.style.display='flex';setTimeout(()=>m.style.opacity='1',10);}
+}
+function hideClearModal(){
+  const m=document.getElementById('clear-modal');
+  if(m){m.style.opacity='0';setTimeout(()=>m.style.display='none',200);}
+}
+function confirmClearCache(){
+  const btn=document.getElementById('confirm-clear-btn');
+  if(btn){btn.textContent='Clearing...';btn.disabled=true;}
+  setTimeout(()=>{hideClearModal();showToast('Cache cleared successfully','success');if(btn){btn.textContent='Confirm Clear';btn.disabled=false;}},1500);
+}
+function simulateRequest(){
+  const r={id:randId(),time:new Date().toISOString().replace('T',' ').substr(0,19),modelUsed:'gpt-3.5-turbo',cacheHit:false,tier:'simple',latencyMs:randBetween(200,500),promptTokens:randBetween(10,50),completionTokens:randBetween(5,30),cost:+(Math.random()*0.002+0.001).toFixed(4),compressed:false};
+  REQUESTS.unshift(r);
+  renderRequestsTable();
+  const tbody=document.getElementById('req-tbody');
+  if(tbody&&tbody.firstElementChild){tbody.firstElementChild.style.background='rgba(62,207,142,0.08)';setTimeout(()=>{if(tbody.firstElementChild)tbody.firstElementChild.style.background='';},2000);}
+  showToast('Request simulated','success');
+}
+function exportCSV(){
+  const data=getFilteredRequests();
+  const header='ID,Time,Model,Cache Hit,Tier,Latency(ms),Tokens,Cost(USD),Compressed\n';
+  const rows=data.map(r=>[r.id,r.time,r.modelUsed,r.cacheHit,r.tier,r.latencyMs,r.promptTokens+r.completionTokens,r.cost,r.compressed].join(',')).join('\n');
+  const blob=new Blob([header+rows],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='contextforge_requests.csv';a.click();
+  showToast('CSV exported','success');
+}
+function toggleSidebar(){
+  sidebarCollapsed=!sidebarCollapsed;
+  const nav=document.querySelector('.nav');
+  if(nav)nav.style.width=sidebarCollapsed?'52px':'196px';
+  document.querySelectorAll('.nav-label').forEach(l=>l.style.display=sidebarCollapsed?'none':'');
+}
+function saveSettings(){
+  showToast('Settings saved successfully','success');
+}
+function resetSettings(){
+  const sim=document.getElementById('sim-threshold');
+  if(sim){sim.value=0.92;document.getElementById('sim-val').textContent='0.92';}
+  showToast('Settings reset to defaults','success');
+}
+function applyFilters(){
+  reqPage=1;renderRequestsTable();
+}
+function prevPage(){if(reqPage>1){reqPage--;renderRequestsTable();}}
+function nextPage(){const t=Math.ceil(getFilteredRequests().length/20);if(reqPage<t){reqPage++;renderRequestsTable();}}
+
+// ── BUTTON EFFECTS ─────────────────────────────────────────────────────────
+document.addEventListener('mousedown',e=>{
+  if(e.target.tagName==='BUTTON'){e.target.style.transform='scale(0.97)';setTimeout(()=>e.target.style.transform='',120);}
+});
+
+// ── SEARCH & FILTER LISTENERS ──────────────────────────────────────────────
+document.addEventListener('input',e=>{
+  if(e.target.id==='req-search'){reqFilters.search=e.target.value;applyFilters();}
+  if(e.target.id==='sim-threshold'){document.getElementById('sim-val').textContent=e.target.value;}
+});
+document.addEventListener('change',e=>{
+  if(e.target.id==='cache-filter'){reqFilters.cache=e.target.value;applyFilters();}
+  if(e.target.id==='tier-filter'){reqFilters.tier=e.target.value;applyFilters();}
+});
+
+navigateTo('overview');
+</script>
+</body>
+</html>
