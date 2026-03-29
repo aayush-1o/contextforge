@@ -25,7 +25,6 @@ http://localhost:8000
 | `GET` | `/v1/cache/stats` | Cache statistics |
 | `DELETE` | `/v1/cache` | Flush entire cache |
 | `DELETE` | `/v1/cache/{key}` | Invalidate a specific cache entry |
-| `GET` | `/dashboard` | Telemetry dashboard (HTML) |
 
 ---
 
@@ -272,9 +271,11 @@ Invalidate a specific cache entry by its key. Removes both the FAISS vector and 
 
 ---
 
-## `GET /dashboard`
+## Dashboard
 
-Serves the interactive telemetry dashboard. This is an HTML page that runs client-side with Chart.js and fetches data from the telemetry API endpoints.
+The telemetry dashboard is a static web application located at `docs/dashboard/index.html`. It fetches data from the telemetry API endpoints listed above.
 
-- When accessed via the server (`http://localhost:8000/dashboard`), it shows live data.
-- When opened directly from the filesystem (`docs/dashboard.html`), it runs in demo mode with sample data.
+- **Backend running:** Open `docs/dashboard/index.html` — it connects to `http://localhost:8000` and shows live data.
+- **Backend down:** The dashboard falls back to built-in mock data for demos and development.
+
+For full dashboard documentation, see [DASHBOARD.md](DASHBOARD.md).

@@ -201,17 +201,22 @@ X-Model-Selected: gpt-4o    ← upgraded from gpt-3.5-turbo
 
 ## Dashboard
 
-ContextForge includes a built-in telemetry dashboard that visualizes request data in real time. Access it at `http://localhost:8000/dashboard` when the server is running.
+ContextForge includes a telemetry dashboard that visualizes request data in real time.
 
-![Dashboard](./docs/assets/dashboard-full.png)
+![Dashboard](./docs/assets/dashboard-overview.png)
+
+Open `docs/dashboard/index.html` in your browser. The dashboard auto-detects the backend:
+- **Backend running** → shows live data with an "API Connected" badge
+- **Backend down** → falls back to mock data for demos
 
 The dashboard shows:
-- Total requests, cache hit rate, and cost savings
-- Latency distribution over time
-- Model tier breakdown (simple vs. complex)
-- Per-request details table
+- Total requests, cache hit rate, avg latency, and cost
+- Requests over time and model distribution charts
+- Full request log with search and filters
+- Cache stats and similarity distribution
+- Latency, cost, and hit rate trends
 
-You can also open `docs/dashboard.html` directly in a browser for a demo mode with sample data.
+For full details, see [docs/DASHBOARD.md](docs/DASHBOARD.md).
 
 ---
 
@@ -325,9 +330,15 @@ contextforge/
 │   ├── ARCHITECTURE.md      # System design and component diagram
 │   ├── API.md               # Full API reference
 │   ├── CONFIGURATION.md     # Environment variable reference
+│   ├── DASHBOARD.md         # Dashboard architecture and guide
 │   ├── HANDOFF.md           # Developer onboarding guide
-│   ├── dashboard.html       # Interactive telemetry dashboard
-│   └── assets/              # Images and diagrams
+│   ├── SETUP.md             # Local development setup
+│   ├── TROUBLESHOOTING.md   # Common issues and fixes
+│   ├── assets/              # Screenshots and diagrams
+│   └── dashboard/           # Interactive telemetry dashboard (static)
+│       ├── index.html
+│       ├── css/style.css
+│       └── js/{app,charts,data,tables,ui}.js
 ├── .github/workflows/
 │   └── ci.yml               # GitHub Actions: lint + test + benchmark
 ├── docker-compose.yml       # App + Redis services
@@ -403,10 +414,10 @@ See [benchmarks/README.md](benchmarks/README.md) for full details.
 | 5 | Telemetry Layer | ✅ Complete |
 | 6 | Adaptive Thresholds & Cache Invalidation | ✅ Complete |
 | 7 | Testing & Benchmarking Harness | ✅ Complete |
-| 8 | Dockerization & Deployment | ⏳ In Progress |
-| 9 | Final Documentation & Handoff | ⏳ In Progress |
+| 8 | Dockerization & Dashboard | ✅ Complete |
+| 9 | Final Documentation & Handoff | ✅ Complete |
 
-> **v0.7.0** · 84/84 tests passing · ruff clean · 1000-prompt benchmark dataset
+> **v0.8.0** · 84/84 tests passing · ruff clean · modular dashboard · production docs
 
 ---
 
@@ -414,12 +425,15 @@ See [benchmarks/README.md](benchmarks/README.md) for full details.
 
 | Document | Description |
 |----------|-------------|
+| [Setup Guide](docs/SETUP.md) | Local development setup — prerequisites, install, run |
 | [Architecture](docs/ARCHITECTURE.md) | System design, request pipeline, component diagram |
 | [API Reference](docs/API.md) | Full endpoint documentation with request/response schemas |
+| [Dashboard](docs/DASHBOARD.md) | Dashboard architecture, pages, element IDs, dev guide |
 | [Configuration](docs/CONFIGURATION.md) | Complete environment variable reference |
-| [Handoff Guide](docs/HANDOFF.md) | Developer onboarding — gotchas, file map, next steps |
+| [Troubleshooting](docs/TROUBLESHOOTING.md) | Common issues and fixes |
+| [Handoff Guide](docs/HANDOFF.md) | Developer onboarding — gotchas, file map |
 | [Decisions](DECISIONS.md) | Architecture Decision Records (ADR-001 to ADR-004) |
-| [Changelog](CHANGELOG.md) | Version history (v0.0.1 → v0.7.0) |
+| [Changelog](CHANGELOG.md) | Version history (v0.0.1 → v0.8.0) |
 | [Contributing](CONTRIBUTING.md) | Development setup, branch strategy, PR process |
 
 ---

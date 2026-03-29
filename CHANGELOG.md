@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [v0.8.0] — 2026-03-29
+
+### Added — Phase 8–9: Dashboard & Documentation
+- Modular dashboard rebuild: monolithic `dashboard.html` replaced with `docs/dashboard/` containing:
+  - `index.html` — page shell with sidebar, header, and 6 page sections
+  - `css/style.css` — complete dark-theme design system
+  - `js/app.js` — page navigation, API data loading, normalization layer
+  - `js/charts.js` — 6 Chart.js charts (requests, models, similarity, latency, cost, hit rate)
+  - `js/tables.js` — table rendering with pagination, search, and filters
+  - `js/data.js` — mock data and API connection detection
+  - `js/ui.js` — toast, modal, sidebar, formatters, clipboard
+- Dashboard auto-detects backend at `http://localhost:8000` and falls back to mock data
+- `normalizeRequest(r)` function for backend-to-frontend field mapping
+- 19 required element IDs for test automation (documented in DASHBOARD.md)
+- New documentation:
+  - `docs/SETUP.md` — local development setup guide
+  - `docs/DASHBOARD.md` — dashboard architecture, pages, element IDs, dev guide
+  - `docs/TROUBLESHOOTING.md` — common issues and fixes
+- Updated documentation:
+  - `README.md` — fixed dashboard references, updated roadmap (all phases complete), new docs table
+  - `docs/ARCHITECTURE.md` — added dashboard architecture section, updated build status
+  - `docs/API.md` — fixed dashboard endpoint reference
+  - `docs/HANDOFF.md` — updated version, fixed dashboard gotcha, updated What's Next
+  - `CHANGELOG.md` — added v0.8.0 entry
+- Dashboard screenshots added to `docs/assets/`
+
+---
+
 ## [v0.7.0] — 2026-03-27
 
 ### Added — Phase 7: Testing & Benchmarking Harness

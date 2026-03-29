@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ContextForge Dashboard – Real-time monitoring for LLM proxy, cache, and smart routing.">
+  <title>ContextForge Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- ═══ BOOT SCREEN ═══ -->
+  <div id="boot-screen" class="boot-screen">
+    <div class="boot-logo"></div>
+    <div class="boot-text">Loading ContextForge…</div>
+  </div>
+
+  <!-- ═══ MOBILE OVERLAY ═══ -->
+  <div id="mobile-overlay" class="mobile-overlay"></div>
+
+  <!-- ═══ DASHBOARD SHELL ═══ -->
+  <div class="dashboard">
+
+    <!-- ─── SIDEBAR ─── -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-brand">
+        <div class="sidebar-brand-icon">CF</div>
+        <span class="sidebar-brand-text">ContextForge</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="sidebar-section-label">Monitor</div>
+        <div class="nav-item active" data-page="overview">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          <span class="nav-item-text">Overview</span>
+        </div>
+        <div class="nav-item" data-page="requests">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <span class="nav-item-text">Requests</span>
+        </div>
+        <div class="nav-item" data-page="cache">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+          <span class="nav-item-text">Cache</span>
+        </div>
+
+        <div class="sidebar-section-label">Intelligence</div>
+        <div class="nav-item" data-page="router">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span class="nav-item-text">Router</span>
+        </div>
+        <div class="nav-item" data-page="telemetry">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span class="nav-item-text">Telemetry</span>
+        </div>
+
+        <div class="sidebar-section-label">System</div>
+        <div class="nav-item" data-page="settings">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+          <span class="nav-item-text">Settings</span>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button id="sidebar-toggle" class="sidebar-toggle" data-action="toggle-sidebar" title="Collapse sidebar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ─── MAIN AREA ─── -->
+    <div class="main-area">
+
+      <!-- ─── HEADER ─── -->
+      <header class="header">
+        <div class="header-left">
+          <button class="mobile-menu-btn" data-action="toggle-sidebar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <h1 id="header-title" class="header-title">Overview</h1>
+        </div>
+        <div class="header-right">
+          <div class="time-range-group">
+            <button class="time-range-btn" data-range="1h">1H</button>
+            <button class="time-range-btn" data-range="6h">6H</button>
+            <button class="time-range-btn" data-range="24h">24H</button>
+            <button class="time-range-btn active" data-range="7d">7D</button>
+            <button class="time-range-btn" data-range="30d">30D</button>
+          </div>
+          <button id="simulate-btn" class="btn btn-primary btn-sm" data-action="simulate">⚡ Simulate</button>
+          <div id="conn-badge" class="connection-badge">
+            <span class="connection-dot"></span>
+            <span class="connection-label">Checking…</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- ─── PAGE CONTAINER ─── -->
+      <div class="page-container">
+
+        <!-- ════════════════════════════════════════════ -->
+        <!--  OVERVIEW PAGE                              -->
+        <!-- ════════════════════════════════════════════ -->
+        <section id="page-overview" class="page active">
+          <div class="page-header">
+            <h2 class="page-title">Dashboard Overview</h2>
+            <p class="page-subtitle">Real-time metrics for your LLM proxy infrastructure</p>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-icon blue">📊</div>
+              <div class="metric-label">Total Requests</div>
+              <div class="metric-value" id="metric-total-requests">0</div>
+              <div class="metric-change up">↑ 12.4%</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-icon green">🎯</div>
+              <div class="metric-label">Cache Hit Rate</div>
+              <div class="metric-value" id="metric-hit-rate">0%</div>
+              <div class="metric-change up">↑ 3.2%</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-icon orange">⚡</div>
+              <div class="metric-label">Avg Latency</div>
+              <div class="metric-value" id="metric-avg-latency">0ms</div>
+              <div class="metric-change down">↓ 8.1%</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-icon purple">💰</div>
+              <div class="metric-label">Total Cost</div>
+              <div class="metric-value" id="metric-total-cost">$0</div>
+              <div class="metric-change up">↑ 5.7%</div>
+            </div>
+          </div>
+
+          <div class="charts-grid">
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <div>
+                  <div class="chart-card-title">Requests Over Time</div>
+                  <div class="chart-card-subtitle">Daily request volume with cache breakdown</div>
+                </div>
+              </div>
+              <div class="chart-wrapper">
+                <canvas id="chart-requests"></canvas>
+              </div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <div>
+                  <div class="chart-card-title">Model Distribution</div>
+                  <div class="chart-card-subtitle">Requests by LLM model</div>
+                </div>
+              </div>
+              <div class="chart-wrapper">
+                <canvas id="chart-models"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="table-card-header">
+              <div class="table-card-title">Recent Requests</div>
+              <button class="btn btn-ghost btn-sm" data-page="requests" onclick="navigateTo('requests')">View All →</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Request ID</th>
+                    <th>Time</th>
+                    <th>Model</th>
+                    <th>Latency</th>
+                    <th>Cost</th>
+                    <th>Cache</th>
+                  </tr>
+                </thead>
+                <tbody id="recent-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ════════════════════════════════════════════ -->
+        <!--  REQUESTS PAGE                              -->
+        <!-- ════════════════════════════════════════════ -->
+        <section id="page-requests" class="page">
+          <div class="page-header flex justify-between items-center">
+            <div>
+              <h2 class="page-title">Request Log</h2>
+              <p class="page-subtitle">Browse and filter all proxied requests</p>
+            </div>
+            <button id="export-btn" class="btn btn-secondary btn-sm" data-action="export-csv">⬇ Export CSV</button>
+          </div>
+
+          <div class="filter-bar">
+            <input id="req-search" class="input" type="text" placeholder="Search by ID, model, or endpoint…">
+            <select id="filter-model" class="select-input">
+              <option value="">All Models</option>
+              <option value="gpt-4o">gpt-4o</option>
+              <option value="gpt-4o-mini">gpt-4o-mini</option>
+              <option value="claude-3.5-sonnet">claude-3.5-sonnet</option>
+              <option value="claude-3-haiku">claude-3-haiku</option>
+              <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+              <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+            </select>
+            <select id="filter-status" class="select-input">
+              <option value="">All Statuses</option>
+              <option value="HIT">Cache HIT</option>
+              <option value="MISS">Cache MISS</option>
+            </select>
+            <select id="cache-filter" class="select-input">
+              <option value="">All Cache</option>
+              <option value="hit">Hits Only</option>
+              <option value="miss">Misses Only</option>
+            </select>
+            <select id="tier-filter" class="select-input">
+              <option value="">All Tiers</option>
+              <option value="simple">Simple</option>
+              <option value="complex">Complex</option>
+            </select>
+          </div>
+
+          <div class="table-card">
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Request ID</th>
+                    <th>Time</th>
+                    <th>Model</th>
+                    <th>Endpoint</th>
+                    <th>Tokens (In/Out)</th>
+                    <th>Latency</th>
+                    <th>Cost</th>
+                    <th>Cache</th>
+                  </tr>
+                </thead>
+                <tbody id="req-tbody"></tbody>
+              </table>
+            </div>
+            <div class="pagination">
+              <span id="page-info" class="pagination-info">—</span>
+              <div class="pagination-buttons">
+                <button id="prev-page" class="btn btn-secondary btn-sm" disabled>← Prev</button>
+                <button id="next-page" class="btn btn-secondary btn-sm" disabled>Next →</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ════════════════════════════════════════════ -->
+        <!--  CACHE PAGE                                 -->
+        <!-- ════════════════════════════════════════════ -->
+        <section id="page-cache" class="page">
+          <div class="page-header flex justify-between items-center">
+            <div>
+              <h2 class="page-title">Cache Manager</h2>
+              <p class="page-subtitle">Semantic cache performance and entries</p>
+            </div>
+            <button id="clear-cache-btn" class="btn btn-danger btn-sm" data-action="clear-cache">🗑 Clear Cache</button>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-icon cyan">📦</div>
+              <div class="metric-label">Total Entries</div>
+              <div class="metric-value" id="cache-total-entries">—</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-icon blue">💾</div>
+              <div class="metric-label">Memory Usage</div>
+              <div class="metric-value" id="cache-memory">—</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-icon green">🎯</div>
+              <div class="metric-label">Hit Rate</div>
+              <div class="metric-value" id="cache-hit-rate">—</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-icon purple">📐</div>
+              <div class="metric-label">Avg Similarity</div>
+              <div class="metric-value" id="cache-avg-sim">—</div>
+            </div>
+          </div>
+
+          <div class="charts-grid">
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <div>
+                  <div class="chart-card-title">Similarity Distribution</div>
+                  <div class="chart-card-subtitle">Cache entry similarity scores</div>
+                </div>
+              </div>
+              <div class="chart-wrapper">
+                <canvas id="chart-similarity"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="table-card-header">
+              <div class="table-card-title">Cache Entries</div>
+              <span class="text-muted" style="font-size:0.78rem">Sorted by hit count</span>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Key</th>
+                    <th>Prompt Preview</th>
+                    <th>Model</th>
+                    <th>Similarity</th>
+                    <th>Hits</th>
+                    <th>Size</th>
+                    <th>TTL</th>
+                  </tr>
+                </thead>
+                <tbody id="cache-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ════════════════════════════════════════════ -->
+        <!--  ROUTER PAGE                                -->
+        <!-- ════════════════════════════════════════════ -->
+        <section id="page-router" class="page">
+          <div class="page-header">
+            <h2 class="page-title">Smart Router</h2>
+            <p class="page-subtitle">AI-powered request routing to optimal models</p>
+          </div>
+
+          <div class="accuracy-display">
+            <div class="progress-ring-container">
+              <svg class="progress-ring" width="128" height="128">
+                <circle class="progress-ring-bg" cx="64" cy="64" r="54"/>
+                <circle id="accuracy-ring-fill" class="progress-ring-fill" cx="64" cy="64" r="54"/>
+              </svg>
+              <div id="accuracy-ring-label" class="progress-ring-label">—</div>
+            </div>
+            <div class="accuracy-stats">
+              <div class="stat-inline">
+                <span class="stat-inline-label">Total Routed</span>
+                <span id="router-total-requests" class="stat-inline-value">—</span>
+              </div>
+              <div class="stat-inline">
+                <span class="stat-inline-label">Avg Accuracy</span>
+                <span id="router-avg-accuracy" class="stat-inline-value">—</span>
+              </div>
+              <div class="stat-inline">
+                <span class="stat-inline-label">Categories</span>
+                <span id="router-categories" class="stat-inline-value">—</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="charts-grid">
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <div>
+                  <div class="chart-card-title">Model Assignment</div>
+                  <div class="chart-card-subtitle">Requests distributed by routed model</div>
+                </div>
+              </div>
+              <div class="chart-wrapper">
+                <canvas id="router-models-chart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="table-card-header">
+              <div class="table-card-title">Routing Categories</div>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>Assigned Model</th>
+                    <th>Requests</th>
+                    <th>Accuracy</th>
+                    <th>Avg Latency</th>
+                    <th>Avg Cost</th>
+                  </tr>
+                </thead>
+                <tbody id="router-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ════════════════════════════════════════════ -->
+        <!--  TELEMETRY PAGE                             -->
+        <!-- ════════════════════════════════════════════ -->
+        <section id="page-telemetry" class="page">
+          <div class="page-header">
+            <h2 class="page-title">Telemetry</h2>
+            <p class="page-subtitle">Cost, latency, and cache performance trends</p>
+          </div>
+
+          <div class="charts-grid">
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <div>
+                  <div class="chart-card-title">Daily Cost</div>
+                  <div class="chart-card-subtitle">API spend over time</div>
+                </div>
+              </div>
+              <div class="chart-wrapper">
+                <canvas id="chart-cost"></canvas>
+              </div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <div>
+                  <div class="chart-card-title">Average Latency</div>
+                  <div class="chart-card-subtitle">Response time trends</div>
+                </div>
+              </div>
+              <div class="chart-wrapper">
+                <canvas id="chart-latency"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="charts-grid" style="margin-top: 0">
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <div>
+                  <div class="chart-card-title">Cache Hit Rate</div>
+                  <div class="chart-card-subtitle">Cache effectiveness over time</div>
+                </div>
+              </div>
+              <div class="chart-wrapper">
+                <canvas id="chart-hitrate"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ════════════════════════════════════════════ -->
+        <!--  SETTINGS PAGE                              -->
+        <!-- ════════════════════════════════════════════ -->
+        <section id="page-settings" class="page">
+          <div class="page-header">
+            <h2 class="page-title">Settings</h2>
+            <p class="page-subtitle">Configure your ContextForge proxy</p>
+          </div>
+
+          <div class="settings-grid">
+            <div class="settings-section">
+              <div class="settings-section-title">API Configuration</div>
+              <div class="form-group">
+                <label class="form-label" for="setting-api-url">API Base URL</label>
+                <input id="setting-api-url" class="input" type="text" placeholder="http://localhost:8000">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="setting-max-tokens">Max Tokens</label>
+                <input id="setting-max-tokens" class="input" type="number" placeholder="4096">
+              </div>
+            </div>
+
+            <div class="settings-section">
+              <div class="settings-section-title">Cache Settings</div>
+              <div class="form-group">
+                <label class="form-label" for="setting-cache-ttl">Default TTL (seconds)</label>
+                <input id="setting-cache-ttl" class="input" type="number" placeholder="3600">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="setting-similarity">Similarity Threshold</label>
+                <input id="setting-similarity" class="input" type="number" step="0.01" min="0" max="1" placeholder="0.92">
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-actions">
+            <button id="btn-save-settings" class="btn btn-primary" data-action="save-settings">💾 Save Settings</button>
+            <button class="btn btn-secondary" data-action="reset-settings">↺ Reset Defaults</button>
+          </div>
+        </section>
+
+      </div><!-- /page-container -->
+    </div><!-- /main-area -->
+  </div><!-- /dashboard -->
+
+  <!-- ═══ MODAL ═══ -->
+  <div id="confirm-modal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Confirm Action</span>
+        <button class="modal-close" data-action="close-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to clear the semantic cache? This action cannot be undone and will remove all cached embeddings and responses.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" data-action="cancel-modal">Cancel</button>
+        <button id="confirm-action" class="btn btn-danger btn-sm">Clear Cache</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TOAST CONTAINER ═══ -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- ═══ SCRIPTS ═══ -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/tables.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

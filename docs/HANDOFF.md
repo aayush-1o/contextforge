@@ -8,13 +8,13 @@
 
 | Item | Value |
 |------|-------|
-| **Last completed phase** | Phase 7 (Testing & Benchmarking Harness) |
-| **Version** | `v0.7.0` |
+| **Last completed phase** | Phase 9 (Final Documentation & Handoff) |
+| **Version** | `v0.8.0` |
 | **Tests** | 84/84 passing |
 | **Lint** | ruff clean (zero errors) |
 | **Router accuracy** | 92.8% on 1000-prompt labeled dataset |
 | **Branch** | `main` has all phases merged |
-| **Tags** | `v0.1.0` through `v0.7.0` (one per phase) |
+| **Tags** | `v0.1.0` through `v0.8.0` (one per phase) |
 
 ---
 
@@ -176,9 +176,9 @@ The threshold self-tunes between `ADAPTIVE_THRESHOLD_MIN` (0.70) and `ADAPTIVE_T
 
 `app/adaptive.py` uses `datetime.datetime.utcnow()` which shows a DeprecationWarning on Python 3.12+. Can be fixed by switching to `datetime.datetime.now(datetime.UTC)`.
 
-### 14. Dashboard served via static mount
+### 14. Dashboard is a static site
 
-`app/main.py` mounts `docs/` as `/static` and serves the dashboard at `GET /dashboard`. The dashboard runs client-side with Chart.js and connects to the telemetry API. When opened directly from the filesystem (file:// protocol), it runs in demo mode with mock data.
+The dashboard lives at `docs/dashboard/index.html`. It is a standalone static web app — no server-side rendering, no build step. It connects to `http://localhost:8000` for live data and falls back to mock data when the backend is unavailable. See [docs/DASHBOARD.md](DASHBOARD.md) for the full architecture.
 
 ### 15. Telemetry is local-only
 
@@ -204,17 +204,21 @@ All telemetry is stored locally in SQLite at `./data/telemetry.db`. No request d
 
 ## What's Next
 
-| Phase | Feature | Description |
-|:-----:|---------|-------------|
-| **8** | Dockerization | Production-ready Docker images with health checks, volumes, multi-stage builds |
-| **9** | Final Handoff | Complete API docs, deployment guide, architecture diagrams, contributor onboarding |
+All 9 phases are complete. Potential future enhancements:
 
-### Phase 8 Requirements
+- Multi-stage Dockerfile for smaller images
+- ML-based complexity classifier (replacing rule-based router)
+- Multi-provider load balancing
+- Prompt observability and tracing
+- Dashboard deployment as a hosted page
 
-- Multi-stage Dockerfile (builder → runtime) for smaller images
-- Non-root user for security
-- `HEALTHCHECK` instruction pointing to `/health`
-- Updated `docker-compose.yml` with health checks, volume mounts, restart policies
-- Smoke test: `docker compose up --build -d` → `curl /health` → works from fresh clone
+## Related Documentation
 
-For full details, see the [Roadmap section in README.md](../README.md#roadmap).
+| Document | Description |
+|----------|-------------|
+| [SETUP.md](SETUP.md) | Local development setup |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | System design and component diagram |
+| [API.md](API.md) | Full API reference |
+| [DASHBOARD.md](DASHBOARD.md) | Dashboard architecture and guide |
+| [CONFIGURATION.md](CONFIGURATION.md) | Environment variable reference |
+| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Common issues and fixes |

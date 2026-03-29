@@ -1,6 +1,5 @@
 # ContextForge Architecture
-
-> Last updated: v0.7.0 (Phases 0–7 complete)
+> Last updated: v0.8.0 (Phases 0–9 complete)
 
 ---
 
@@ -34,15 +33,16 @@ ContextForge is a proxy middleware that sits between LLM-powered applications an
 | Cache Invalidation API | ✅ | 6 |
 | 1000-Prompt Benchmark Suite | ✅ | 7 |
 | E2E Benchmark Runner | ✅ | 7 |
-| Production Docker | ⏳ | 8 |
-| Final Documentation | ⏳ | 9 |
+| Docker Compose | ✅ | 8 |
+| Modular Dashboard | ✅ | 8 |
+| Production Documentation | ✅ | 9 |
 
 ---
 
 ## Request Pipeline
 
 
-This is the actual request flow as of v0.7.0:
+This is the actual request flow as of v0.8.0:
 
 ```
 Client Request (POST /v1/chat/completions)
@@ -138,10 +138,12 @@ Client Request (POST /v1/chat/completions)
     │ (adaptive.py)│   │                  │   │ SQLite + WAL   │
     └──────────────┘   └──────────────────┘   └────────────────┘
 
-    ┌──────────────────┐
-    │ Benchmark Runner │
-    │ (benchmarks/)    │
-    └──────────────────┘
+    ┌──────────────────┐   ┌───────────────────────┐
+    │ Benchmark Runner │   │ Dashboard              │
+    │ (benchmarks/)    │   │ (docs/dashboard/)      │
+    └──────────────────┘   │ Static HTML/JS/CSS     │
+                           │ → fetches /v1/telemetry│
+                           └───────────────────────┘
 ```
 
 ---
@@ -159,15 +161,42 @@ Client Request (POST /v1/chat/completions)
 | 7 | Middleware | Wraps requests with telemetry state | `app/middleware.py` |
 | 8 | Adaptive Thresholds | Auto-tunes similarity threshold from cache hit rates | `app/adaptive.py` |
 | 9 | Cache Management | Flush/invalidate cache entries, stats | `app/cache.py`, `app/main.py` |
-| 10 | Benchmarks | E2E tests for routing, caching, and latency | `benchmarks/` |
-| 11 | Config | Loads and validates environment variables at startup | `app/config.py` |
+| 10 | Dashboard | Real-time telemetry visualization | `docs/dashboard/` |
+| 11 | Benchmarks | E2E tests for routing, caching, and latency | `benchmarks/` |
+| 12 | Config | Loads and validates environment variables at startup | `app/config.py` |
+
+---
+
+## Dashboard Architecture
+
+The dashboard is a standalone static web app at `docs/dashboard/`. It connects to the backend API for live data and falls back to mock data when the backend is unavailable.
+
+```
+docs/dashboard/
+├── index.html          # Page shell with all sections
+├── css/style.css       # Design system (dark theme)
+└── js/
+    ├── data.js         # Mock data + connection check
+    ├── ui.js           # Toast, modal, sidebar, formatters
+    ├── charts.js       # 6 Chart.js charts
+    ├── tables.js       # Table rendering + pagination
+    └── app.js          # Navigation, data loading, normalization
+```
+
+**API endpoints used by dashboard:**
+- `GET /health` — connection detection
+- `GET /v1/telemetry?limit=50` — request records
+- `GET /v1/telemetry/summary` — aggregated metrics
+- `GET /v1/cache/stats` — cache statistics
+
+For full details, see [DASHBOARD.md](DASHBOARD.md).
 
 ---
 
 ## Technology Stack
 
 | Component | Technology | Version |
-|-----------|-----------|---------|
+|-----------|-----------|---------| 
 | Web Framework | FastAPI | 0.115.6 |
 | Embedding Model | all-MiniLM-L6-v2 | via sentence-transformers 3.3.1 |
 | Vector Index | FAISS (CPU) | 1.9.0.post1 |
@@ -177,6 +206,7 @@ Client Request (POST /v1/chat/completions)
 | Config | Pydantic Settings | 2.7.1 |
 | Logging | structlog | 24.4.0 |
 | Testing | pytest + httpx | 8.3.4 / 0.28.1 |
+| Dashboard | Chart.js 4.x | CDN |
 | Containerization | Docker + Docker Compose | — |
 
 ---
@@ -242,3 +272,4 @@ All ADRs are documented in [DECISIONS.md](../DECISIONS.md).
 | ADR-004 | all-MiniLM-L6-v2 embeddings | ✅ Implemented (Phase 2) |
 
 Each ADR includes context, decision rationale, and a documented upgrade path.
+
